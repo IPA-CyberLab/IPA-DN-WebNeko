@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -2080,7 +2080,7 @@ Guacamole.Client = function(tunnel) {
         if (!isConnected())
             return;
 
-        tunnel.sendMessage("key", keysym, pressed);
+        tunnel.sendMessage("key", keysym, pressed ? 1 : 0); // 2021/04/10 fix bug dnobori  jsdoc が誤り。bool ではダメで、1 か 0 でなければならない。
     };
 
     /**
