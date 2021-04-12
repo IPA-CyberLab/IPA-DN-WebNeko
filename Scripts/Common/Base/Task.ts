@@ -28,24 +28,26 @@
 // PROCESS MAY BE SERVED ON EITHER PARTY IN THE MANNER AUTHORIZED BY APPLICABLE
 // LAW OR COURT RULE.
 
+import { Util } from "./Util";
+
 // Author: Daiyuu Nobori
-// テスト 1
+// Async Utils
 
-import { Moment } from "../../Imports";
-import { TestClass2 } from "./Test2";
-
-export class TestClass
+export class Task
 {
-    public static Test(): void
+    public static async Delay(msec: number): Promise<void>
     {
-        console.log("Test - " + Moment().format("M - D （dd）"))
+        msec = Util.ToInt(msec);
 
-        TestClass2.Test2();
-    }
-
-    public static Test4(): void
-    {
-        console.log("Test4 - " + Moment().format("M - D （dd）"))
+        return new Promise(
+            function (resolve)
+            {
+                setTimeout(function ()
+                {
+                    resolve();
+                }, msec);
+            }
+        );
     }
 }
 
