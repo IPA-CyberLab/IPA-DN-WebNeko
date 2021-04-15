@@ -28,10 +28,9 @@
 // PROCESS MAY BE SERVED ON EITHER PARTY IN THE MANNER AUTHORIZED BY APPLICABLE
 // LAW OR COURT RULE.
 
-import AsyncLock from "async-lock";
 import Guacamole from "../../../Libraries/guacamole-common-js-1.3.0/guacamole-common";
 import { Str } from "../../Common/Base/Str";
-import { Task } from "../../Common/Base/Task";
+import { Task, AsyncLock } from "../../Common/Base/Task";
 import { Util } from "../../Common/Base/Util"
 
 // Author: Daiyuu Nobori
@@ -109,8 +108,8 @@ export const GuaKeyCodes =
     GroupLast: 0xFE0E,
     GroupNext: 0xFE08,
     GroupPrevious: 0xFE0A,
-    FullWidth: null,
-    HalfWidth: null,
+    //FullWidth: null,
+    //HalfWidth: null,
     HangulMode: 0xFF31,
     Hankaku: 0xFF29,
     HanjaMode: 0xFF34,
@@ -140,7 +139,7 @@ export const GuaKeyCodes =
     PrintScreen: 0xFF61,
     Redo: 0xFF66,
     Right: 0xFF53,
-    RomanCharacters: null,
+    //RomanCharacters: null,
     Scroll: 0xFF14,
     Select: 0xFF60,
     Separator: 0xFFAC,
@@ -160,6 +159,7 @@ export const GuaKeyCodes =
     Win: 0xFFEB,
     Zenkaku: 0xFF28,
     ZenkakuHankaku: 0xFF2A,
+    Space: 0x20,
 }
 
 // 論理キーボード抽象クラス
@@ -189,7 +189,7 @@ export abstract class GuaLogicalKeyboard
     // 論理的なキーを押したいときにこれを呼び出すこと
     protected async PressVirtualKeyAsync(code: number, pressed: boolean): Promise<void>
     {
-        await this.LogicalLock.acquire("", async () =>
+        await this.LogicalLock.LockAsync(async () =>
         {
             code = GuaLogicalKeyboard.NormalizeKeyCode(code);
 
@@ -215,7 +215,7 @@ export abstract class GuaLogicalKeyboard
     // 物理的なキーが押された時にこれを呼び出すこと
     public async PhysicalKeyPressedAsync(code: number, pressed: boolean): Promise<void>
     {
-        await this.PhysicalLock.acquire("", async () =>
+        await this.PhysicalLock.LockAsync(async () =>
         {
             code = GuaLogicalKeyboard.NormalizeKeyCode(code);
 
@@ -227,7 +227,7 @@ export abstract class GuaLogicalKeyboard
                 this.CurrentPhysicalKeyStates[code] = pressed;
 
                 // 実装に委ねる
-                if (await this.PhysicalToVirtualOperationImplAsync(code, pressed) === false)
+                if (!await this.PhysicalToVirtualOperationImplAsync(code, pressed))
                 {
                     // 実装が何もしなかった (false を返した) 場合は、そのまま伝える
                     await this.PressVirtualKeyAsync(code, pressed);
@@ -347,32 +347,171 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-        else
+        else if (this.Win_InState)
         {
-            if (this.Win_InState)
+            // Windows キーが押されたときに、a ～ z, A ～ Z のキーが新たに押された場合は、チョン！という形で一瞬そのキーを押してすぐに離す
+            if (code >= Str.CharToAscii("A") && code <= Str.CharToAscii("Z"))
             {
-                // Windows キーが押されたときに、a ～ z, A ～ Z のキーが新たに押された場合は、チョン！という形で一瞬そのキーを押してすぐに離す
-                if (code >= Str.CharToAscii("A") && code <= Str.CharToAscii("Z"))
+                // 大文字コードは小文字に変換する
+                code += 0x20;
+            }
+
+            if (code >= Str.CharToAscii("a") && code <= Str.CharToAscii("z") && pressed)
+            {
+                if (!this.CurrentVirtualKeyStates[code])
                 {
-                    // 大文字コードは小文字に変換する
-                    code += 0x20;
-                }
+                    await this.PressVirtualKeyAsync(code, true);
 
-                if (code >= Str.CharToAscii("a") && code <= Str.CharToAscii("z") && pressed)
-                {
-                    if (!this.CurrentVirtualKeyStates[code])
-                    {
-                        await this.PressVirtualKeyAsync(code, true);
+                    await Task.Delay(100);
 
-                        await Task.Delay(100);
+                    await this.PressVirtualKeyAsync(code, false);
 
-                        await this.PressVirtualKeyAsync(code, false);
-
-                        return true;
-                    }
+                    return true;
                 }
             }
         }
+        else if ((this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
+            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt2]) &&
+            code === GuaKeyCodes.End &&
+            pressed)
+        {
+            // 既に Ctrl + Alt が押されている状態で End が押された場合、Delete を押してすぐに離すことで、Ctrl + Alt + Delete が押されたようにホストに見せかける
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Delete, true);
+
+            await Task.Delay(300);
+
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Delete, false);
+
+            return true;
+        }
+        else if ((this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
+            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt2]) &&
+            code === GuaKeyCodes.Home &&
+            pressed)
+        {
+            // 既に Ctrl + Alt が押されている状態で Home が押された場合、Delete を押してすぐに離すことで、Ctrl + Alt + Delete が押されたようにホストに見せかける
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Delete, true);
+
+            await Task.Delay(300);
+
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Delete, false);
+
+            return true;
+        }
+        else if ((this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
+            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt2]) &&
+            code === GuaKeyCodes.Backspace &&
+            pressed)
+        {
+            // 既に Ctrl + Alt が押されている状態で Backspace が押された場合、Delete を押してすぐに離すことで、Ctrl + Alt + Delete が押されたようにホストに見せかける
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Delete, true);
+
+            await Task.Delay(300);
+
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Delete, false);
+
+            return true;
+        }
+        else if (this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] && code === GuaKeyCodes.Space && pressed)
+        {
+            // IME の ON/OFF の切替え ホットキー その 1: 左 Ctrl + Space
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Control1, false);
+            
+            if (true)
+            {
+                // システムモード
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                await this.PressVirtualKeyAsync(0x60, true);
+
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(0x60, false);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            }
+            else
+            {
+                // ユーザーモード
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
+
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, false);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            }
+
+            return true;
+        }
+        else if (this.CurrentPhysicalKeyStates[GuaKeyCodes.Shift1] && code === GuaKeyCodes.Space && pressed)
+        {
+            // IME の ON/OFF の切替え ホットキー その 2: 左 Shift + Space
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Shift1, false);
+
+            if (true)
+            {
+                // システムモード
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                await this.PressVirtualKeyAsync(0x60, true);
+
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(0x60, false);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            }
+            else
+            {
+                // ユーザーモード
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
+
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, false);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            }
+
+            return true;
+        }
+        else if (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] && code === 0xA0 && pressed)
+        {
+            // IME の ON/OFF の切替え ホットキー その 3: Mac における左 Option + Space
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+
+            if (true)
+            {
+                // システムモード
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                await this.PressVirtualKeyAsync(0x60, true);
+
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(0x60, false);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            }
+            else
+            {
+                // ユーザーモード
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
+
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, false);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            }
+
+            return true;
+        }
+        //else if (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] && code === GuaKeyCodes.Convert && pressed)
+        //{
+        //    await this.PressVirtualKeyAsync(0x60, true);
+
+        //    await Task.Delay(300);
+
+        //    await this.PressVirtualKeyAsync(0x60, false);
+
+        //    return true;
+        //}
 
         return false;
     }

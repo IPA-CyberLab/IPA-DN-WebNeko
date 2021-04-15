@@ -29,9 +29,20 @@
 // LAW OR COURT RULE.
 
 import { Util } from "./Util";
+import { default as _AsyncLock } from "async-lock";
 
 // Author: Daiyuu Nobori
 // Async Utils
+
+export class AsyncLock
+{
+    readonly LockObj = new _AsyncLock();
+
+    public async LockAsync<T>(fn: (() => T | PromiseLike<T>)): Promise<T>
+    {
+        return await this.LockObj.acquire("lock", fn);
+    }
+}
 
 export class Task
 {
