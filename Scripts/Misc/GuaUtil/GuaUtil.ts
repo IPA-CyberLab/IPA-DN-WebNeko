@@ -419,7 +419,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             
             if (true)
             {
-                // システムモード
+                // システムモード または 英語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(0x60, true);
 
@@ -430,7 +430,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             }
             else
             {
-                // ユーザーモード
+                // ユーザーモード かつ 日本語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
 
@@ -449,7 +449,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             if (true)
             {
-                // システムモード
+                // システムモード または 英語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(0x60, true);
 
@@ -460,7 +460,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             }
             else
             {
-                // ユーザーモード
+                // ユーザーモード かつ 日本語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
 
@@ -479,7 +479,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             if (true)
             {
-                // システムモード
+                // システムモード または 英語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(0x60, true);
 
@@ -490,7 +490,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             }
             else
             {
-                // ユーザーモード
+                // ユーザーモード かつ 日本語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
 
