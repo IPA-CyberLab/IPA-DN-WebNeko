@@ -67,5 +67,16 @@ export class Util
         if (!object) return false;
         return true;
     }
+
+    // Null または Undefined かどうか
+    public static IsNullOrUndefined(object: any): boolean
+    {
+        if (object === null || object === undefined)
+        {
+            return true;
+        }
+
+        return false;
+    }
 }
 

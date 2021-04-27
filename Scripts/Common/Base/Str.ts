@@ -124,5 +124,67 @@ export class Str
     {
         return String.fromCharCode(ascii);
     }
+
+    // 文字列が Null またはゼロ長さかどうか
+    public static IsNullOrZeroLen(str: string): boolean
+    {
+        if (Util.IsNullOrUndefined(str)) return true;
+        if (str.length === 0) return true;
+
+        return false;
+    }
+
+    // 文字列が空かどうか
+    public static IsEmpty(str: string): boolean
+    {
+        if (Util.IsNullOrUndefined(str)) return true;
+        if (str.trim().length === 0) return true;
+
+        return false;
+    }
+    public static IsFilled(str: string): boolean
+    {
+        return !Str.IsEmpty(str);
+    }
+
+    // Null または Undefined でない文字を返す
+    public static NonNull(str: string): string
+    {
+        if (Str.IsNullOrZeroLen(str)) return "";
+        return str;
+    }
+
+    // Null または Undefined でない trim() 済み文字を返す
+    public static NonNullTrim(str: string): string
+    {
+        if (Str.IsNullOrZeroLen(str)) return "";
+        return str.trim();
+    }
+
+    // URL エンコード (Cores の UrlEncode に対応。A-Z a-z 0-9 - _ . ! ~ * ' ( ) 以外をすべてエスケープ)
+    public static EncodeUrl(str: string): string
+    {
+        if (Str.IsNullOrZeroLen(str)) return "";
+        return encodeURIComponent(str);
+    }
+
+    // URL デコード (Cores の UrlEncode に対応。A-Z a-z 0-9 - _ . ! ~ * ' ( ) 以外をすべてエスケープ)
+    public static DecodeUrl(str: string): string
+    {
+        if (Str.IsNullOrZeroLen(str)) return "";
+        return decodeURIComponent(str);
+    }
+
+    // 任意の文字列を安全にエンコード
+    public static JavaScriptSafeStrEncode(str: string): string
+    {
+        return btoa(Str.EncodeUrl(str));
+    }
+
+    // 任意の文字列を安全にデコード
+    public static JavaScriptSafeStrDecode(str: string): string
+    {
+        return Str.DecodeUrl(atob(str));
+    }
 }
 
