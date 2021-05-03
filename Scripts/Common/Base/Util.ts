@@ -98,5 +98,19 @@ export class Util
     {
         return Str.IsSamei(Util.GetTypeName(object), type);
     }
+
+    // オブジェクトを JSON に変換
+    public static ObjectToJson(object?: any): string
+    {
+        return JSON.stringify(object);
+    }
+
+    // JSON をオブジェクトに変換
+    public static JsonToObject(json?: string): any
+    {
+        json = Str.NonNull(json);
+
+        return JSON.parse(json);
+    }
 }
 

@@ -42,6 +42,18 @@ export const GuaConsts =
     InvalidKeycode: 0xFFFF,
 };
 
+// Guacamole のステート一覧表
+export const GuaStates =
+{
+    // From: https://github.com/padarom/guacamole-common-js/blob/d19e3e5f051858586bae69184e91381ed4715f8b/guacamole-common-js/src/main/webapp/modules/Client.js#L35
+    STATE_IDLE: 0,
+    STATE_CONNECTING: 1,
+    STATE_WAITING: 2,
+    STATE_CONNECTED: 3,
+    STATE_DISCONNECTING: 4,
+    STATE_DISCONNECTED: 5,
+};
+
 // Guacamole のキーコード一覧表
 export const GuaKeyCodes =
 {
@@ -280,16 +292,25 @@ export class GuaConnectedKeyboard extends GuaLogicalKeyboard
 export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 {
     public readonly Physical: GuaLogicalKeyboard;
+    public readonly Profile: any;
+    public readonly SvcType: string;
+    public readonly IsRdp: boolean;
+    public readonly IsVnc: boolean;
 
     Win_LastState_Shift1 = false;
     Win_LastState_Shift2 = false;
     Win_InState = false;
 
-    public constructor(physical: GuaLogicalKeyboard)
+    public constructor(physical: GuaLogicalKeyboard, profile: any, svcType: string)
     {
         super();
 
         this.Physical = physical;
+        this.Profile = profile;
+        this.SvcType = svcType;
+
+        this.IsRdp = Str.IsSamei(this.SvcType, "rdp");
+        this.IsVnc = !this.IsRdp;
     }
 
     protected async PressVirtualKeyImplAsync(code: number, pressed: boolean): Promise<void>
@@ -417,7 +438,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             // IME の ON/OFF の切替え ホットキー その 1: 左 Ctrl + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Control1, false);
             
-            if (true)
+            if (this.IsRdp || Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
             {
                 // システムモード または 英語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
@@ -447,7 +468,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             // IME の ON/OFF の切替え ホットキー その 2: 左 Shift + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Shift1, false);
 
-            if (true)
+            if (this.IsRdp || Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
             {
                 // システムモード または 英語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
@@ -477,7 +498,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             // IME の ON/OFF の切替え ホットキー その 3: Mac における左 Option + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
 
-            if (true)
+            if (this.IsRdp || Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
             {
                 // システムモード または 英語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
