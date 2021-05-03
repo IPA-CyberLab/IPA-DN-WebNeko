@@ -60,5 +60,22 @@ export class Task
             }
         );
     }
+
+    public static async StartAsyncTaskAsync(task: Promise<void>, showErrorAlert: boolean = false): Promise<void>
+    {
+        try
+        {
+            await task;
+        }
+        catch (ex)
+        {
+            Util.Debug(ex);
+
+            if (showErrorAlert)
+            {
+                alert(ex);
+            }
+        }
+    }
 }
 
