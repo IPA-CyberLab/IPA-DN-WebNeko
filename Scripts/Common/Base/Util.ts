@@ -78,5 +78,25 @@ export class Util
 
         return false;
     }
+
+    // オブジェクトの型名を取得
+    public static GetTypeName(object: any): string
+    {
+        if (object === null) return "null";
+        if (object === undefined) return "undefined";
+        return (typeof object);
+    }
+
+    // オブジェクトが関数かどうか確認する
+    public static IsFunction(object: any): boolean
+    {
+        return Util.IsObjectType(object, "function");
+    }
+
+    // オブジェクトが指定された型かどうか確認する
+    public static IsObjectType(object: any, type: string): boolean
+    {
+        return Str.IsSamei(Util.GetTypeName(object), type);
+    }
 }
 

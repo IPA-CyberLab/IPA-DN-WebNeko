@@ -36,5 +36,8 @@ export { default as _ } from "lodash";
 export { default as $ } from "jquery";
 export { default as Moment } from "moment";
 export { default as CryptoLib } from "crypto-js";
+export { default as Vue } from "vue";
+export { default as Buefy, DialogProgrammatic as Dialog } from "buefy";
+
 
 

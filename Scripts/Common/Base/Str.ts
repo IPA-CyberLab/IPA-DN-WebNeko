@@ -35,12 +35,284 @@ import { Util } from "./Util";
 
 export class Str
 {
+    // HTML タグ一覧
+    public static readonly HtmlSpacing = "&nbsp;";
+    public static readonly HtmlCrlf = "<BR>";
+    public static readonly HtmlBr = Str.HtmlCrlf;
+    public static readonly HtmlLt = "&lt;";
+    public static readonly HtmlGt = "&gt;";
+    public static readonly HtmlAmp = "&amp;";
+    public static readonly HtmlTab = "&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;";
+
+    // 改行コード
+    public static readonly NewLine_CrLf = "\r\n";
+    public static readonly NewLine_Cr = "\r";
+    public static readonly NewLine_Lf = "\n";
+
+    // 文字列を大文字・小文字を区別して比較
+    public static IsSame(s1?: string, s2?: string): boolean
+    {
+        return Str.StrCmp(s1, s2);
+    }
+    public static StrCmp(s1?: string, s2?: string): boolean
+    {
+        s1 = Str.NonNull(s1);
+        s2 = Str.NonNull(s2);
+
+        return s1 === s2;
+    }
+    public static Cmp(s1?: string, s2?: string): number
+    {
+        return Str.StrCmpRetInt(s1, s2);
+    }
+    public static StrCmpRetInt(s1?: string, s2?: string): number
+    {
+        s1 = Str.NonNull(s1);
+        s2 = Str.NonNull(s2);
+
+        return s1.localeCompare(s2);
+    }
+
+    // 文字列を大文字・小文字を区別せずに比較
+    public static IsSamei(s1?: string, s2?: string): boolean
+    {
+        return Str.StrCmpi(s1, s2);
+    }
+    public static StrCmpi(s1?: string, s2?: string): boolean
+    {
+        s1 = Str.NonNull(s1);
+        s2 = Str.NonNull(s2);
+
+        s1 = s1.toLowerCase();
+        s2 = s2.toLowerCase();
+
+        return s1 === s2;
+    }
+    public static Cmpi(s1?: string, s2?: string): number
+    {
+        return Str.StrCmpRetInti(s1, s2);
+    }
+    public static StrCmpRetInti(s1?: string, s2?: string): number
+    {
+        s1 = Str.NonNull(s1);
+        s2 = Str.NonNull(s2);
+
+        s1 = s1.toLowerCase();
+        s2 = s2.toLowerCase();
+
+        return s1.localeCompare(s2);
+    }
+
+    // 文字列を置換する
+    public static ReplaceStr(str?: string, oldKeyword?: string, newKeyword?: string, caseSensitive = false): string
+    {
+        str = Str.NonNull(str);
+        if (Str.IsNullOrZeroLen(str)) return "";
+        oldKeyword = Str.NonNull(oldKeyword);
+        newKeyword = Str.NonNull(newKeyword);
+        if (Str.IsNullOrZeroLen(oldKeyword)) return str;
+
+        let i = 0;
+        let j = 0;
+        let num = 0;
+
+        let sb = "";
+
+        const len_string = str.length;
+        const len_old = oldKeyword.length;
+        const len_new = newKeyword.length;
+
+        while (true)
+        {
+            i = Str.SearchStr(str, oldKeyword, i, caseSensitive);
+            if (i === -1)
+            {
+                sb += str.slice(j);
+                break;
+            }
+
+            num++;
+
+            sb += str.slice(j, i);
+            sb += newKeyword;
+
+            i += len_old;
+            j = i;
+        }
+
+        return sb;
+    }
+
+    // 文字列を検索する
+    public static SearchStr(str?: string, keyword?: string, start = 0, caseSensitive = false): number
+    {
+        if (Str.IsNullOrZeroLen(str) || Str.IsNullOrZeroLen(keyword)) return -1;
+
+        if (caseSensitive)
+        {
+            return str!.indexOf(keyword!, start);
+        }
+        else
+        {
+            str = str!.toLowerCase();
+            keyword = keyword!.toLowerCase();
+
+            return str.indexOf(keyword, start);
+        }
+    }
+
+    // HTML デコード
+    public static DecodeHtml(str?: string): string
+    {
+        str = Str.NonNull(str);
+
+        str = Str.ReplaceStr(str, Str.HtmlCrlf, Str.NewLine_CrLf, false);
+
+        str = Str.ReplaceStr(str, Str.HtmlSpacing, " ", true);
+
+        str = Str.ReplaceStr(str, Str.HtmlLt, "<", true);
+        str = Str.ReplaceStr(str, Str.HtmlGt, ">", true);
+        str = Str.ReplaceStr(str, Str.HtmlAmp, "&", true);
+
+        str = Str.NormalizeCrlf(str);
+
+        return str;
+    }
+
+    // HTML エンコード
+    public static EncodeHtml(str?: string, forceAllSpaceToTag = false, spaceIfEmpty = false): string
+    {
+        str = Str.NonNull(str);
+
+        // 改行を正規化
+        str = Str.NormalizeCrlf(str);
+
+        // & を変換
+        str = Str.ReplaceStr(str, "&", Str.HtmlAmp, true);
+
+        // タグを変換
+        str = Str.ReplaceStr(str, "<", Str.HtmlLt, true);
+        str = Str.ReplaceStr(str, ">", Str.HtmlGt, true);
+
+        // スペースを変換
+        if (str.indexOf(" ") !== -1)
+        {
+            if (forceAllSpaceToTag)
+            {
+                str = Str.ReplaceStr(str, " ", Str.HtmlSpacing, true);
+            }
+            else
+            {
+                // 連続するスペースのみ変換
+                let sb = "";
+                let flag = false;
+
+                for (let i = 0; i < str.length; i++)
+                {
+                    const c = str[i];
+
+                    if (c === " ")
+                    {
+                        if (flag === false)
+                        {
+                            flag = true;
+                            sb += " ";
+                        }
+                        else
+                        {
+                            sb += Str.HtmlSpacing;
+                        }
+                    }
+                    else
+                    {
+                        flag = false;
+                        sb += c;
+                    }
+                }
+
+                str = sb;
+            }
+        }
+
+        // tab を変換
+        str = Str.ReplaceStr(str, "\t", Str.HtmlTab, true);
+
+        // 改行コード
+        str = Str.ReplaceStr(str, Str.NewLine_CrLf, Str.HtmlCrlf, true);
+
+        if (spaceIfEmpty)
+        {
+            if (Str.IsEmpty(str))
+            {
+                str = Str.HtmlSpacing;
+            }
+        }
+
+        return str;
+    }
+
+    // 文字列の改行を正規化する
+    public static NormalizeCrlf(src?: string, crlfData = Str.NewLine_CrLf, ensureLastLineCrlf = false): string
+    {
+        let ret = "";
+        let tmp = "";
+
+        src = Str.NonNull(src);
+
+        for (let i = 0; i < src.length; i++)
+        {
+            let isNewLine = false;
+            const code = Str.CharToAscii(src[i]);
+            if (code === 13)
+            {
+                if (i < (src.length - 1) && Str.CharToAscii(src[i + 1]) === 10)
+                {
+                    i++;
+                }
+                isNewLine = true;
+            }
+            else if (code === 10)
+            {
+                isNewLine = true;
+            }
+
+            if (isNewLine)
+            {
+                ret += tmp;
+                ret += crlfData;
+
+                tmp = "";
+            }
+            else
+            {
+                tmp += src[i];
+            }
+        }
+
+        if (tmp.length >= 1)
+        {
+            ret += tmp;
+
+            if (ensureLastLineCrlf)
+            {
+                ret += crlfData;
+            }
+        }
+
+        return ret;
+    }
+
     // 文字列を整数にパース
-    public static StrToInt(str: string): number
+    public static StrToInt(str?: string): number
     {
         try
         {
-            const int = parseInt(str.trim());
+            if (Str.IsNull(str))
+            {
+                return 0;
+            }
+
+            const int = parseInt(str!.trim());
             if (isNaN(int)) return 0;
             return int;
         }
@@ -94,15 +366,18 @@ export class Str
     }
 
     // 文字列を boolean に変換
-    public static ToBool(str: string): boolean
+    public static ToBool(str?: string): boolean
     {
         const int = Str.StrToInt(str);
         if (int !== 0) return true;
-        const tmp = Str.Trim(str);
+        const tmp = Str.Trim(str).toLowerCase();
         if (tmp.length >= 1)
         {
-            const c = tmp.toLowerCase()[0];
-            if (c === 'y' || c === 't')
+            if (tmp[0] === 'y' || tmp[0] === 't')
+            {
+                return true;
+            }
+            if (tmp.startsWith("ok") || tmp.startsWith("on") || tmp.startsWith("enable"))
             {
                 return true;
             }
@@ -126,53 +401,75 @@ export class Str
     }
 
     // 文字列が Null またはゼロ長さかどうか
-    public static IsNullOrZeroLen(str: string): boolean
+    public static IsNullOrZeroLen(str?: string): boolean
     {
         if (Util.IsNullOrUndefined(str)) return true;
-        if (str.length === 0) return true;
+        if (str!.length === 0) return true;
 
         return false;
+    }
+    public static IsNull(str?: string): boolean
+    {
+        if (Util.IsNullOrUndefined(str)) return true;
+        return false;
+    }
+    public static IsNonNull(str?: string): boolean
+    {
+        return !Str.IsNull(str);
     }
 
     // 文字列が空かどうか
-    public static IsEmpty(str: string): boolean
+    public static IsEmpty(str?: string): boolean
     {
         if (Util.IsNullOrUndefined(str)) return true;
-        if (str.trim().length === 0) return true;
+        if (str!.trim().length === 0) return true;
 
         return false;
     }
-    public static IsFilled(str: string): boolean
+    public static IsFilled(str?: string): boolean
     {
         return !Str.IsEmpty(str);
     }
 
     // Null または Undefined でない文字を返す
-    public static NonNull(str: string): string
+    public static NonNull(str?: string): string
     {
         if (Str.IsNullOrZeroLen(str)) return "";
-        return str;
+        return str!;
     }
 
     // Null または Undefined でない trim() 済み文字を返す
-    public static NonNullTrim(str: string): string
+    public static NonNullTrim(str?: string): string
     {
         if (Str.IsNullOrZeroLen(str)) return "";
-        return str.trim();
+        return str!.trim();
+    }
+
+    // 文字列か Undefined を返す
+    public static FilledOrUndefined(str?: string): string | undefined
+    {
+        if (Str.IsFilled(str))
+        {
+            return str;
+        }
+        else
+        {
+            return undefined;
+        }
     }
 
     // URL エンコード (Cores の UrlEncode に対応。A-Z a-z 0-9 - _ . ! ~ * ' ( ) 以外をすべてエスケープ)
-    public static EncodeUrl(str: string): string
+    public static EncodeUrl(str?: string): string
     {
         if (Str.IsNullOrZeroLen(str)) return "";
-        return encodeURIComponent(str);
+        return encodeURIComponent(str!);
     }
 
     // URL デコード (Cores の UrlEncode に対応。A-Z a-z 0-9 - _ . ! ~ * ' ( ) 以外をすべてエスケープ)
-    public static DecodeUrl(str: string): string
+    public static DecodeUrl(str?: string): string
     {
         if (Str.IsNullOrZeroLen(str)) return "";
-        return decodeURIComponent(str);
+        return decodeURIComponent(str!);
     }
 
     // 任意の文字列を安全にエンコード
@@ -185,6 +482,52 @@ export class Str
     public static JavaScriptSafeStrDecode(str: string): string
     {
         return Str.DecodeUrl(atob(str));
+    }
+
+    // FontAwsome のアイコン名の class の中の文字列を入れると分解する便利関数
+    public static ParseFontAwsomeIconClassStr(classStr?: string): FontAwsomeIcon | null
+    {
+        const icon = new FontAwsomeIcon(classStr);
+
+        if (!icon.IsOK)
+        {
+            return null;
+        }
+
+        return icon;
+    }
+}
+
+
+// FontAwsome のアイコン名の class の中の文字列を入れると分解する便利クラス
+export class FontAwsomeIcon
+{
+    public readonly IsOK: boolean = false;
+    public readonly ClassStr: string = "";
+    public readonly PackName: string = "";
+    public readonly IconName: string = "";
+
+    constructor(classStr?: string)
+    {
+        classStr = Str.NonNullTrim(classStr);
+
+        const tokens = classStr.split(" ");
+        if (tokens.length === 2)
+        {
+            const packName = tokens[0].trim();
+            const tmp = tokens[1].trim();
+
+            const i = tmp.indexOf("-");
+            if (i !== -1)
+            {
+                const iconName = tmp.slice(i + 1);
+
+                this.PackName = packName;
+                this.IconName = iconName;
+                this.ClassStr = tokens[0].trim() + " " + tokens[1].trim();
+                this.IsOK = true;
+            }
+        }
     }
 }
 

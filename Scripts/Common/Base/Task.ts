@@ -61,11 +61,20 @@ export class Task
         );
     }
 
-    public static async StartAsyncTaskAsync(task: Promise<void>, showErrorAlert: boolean = false): Promise<void>
+    public static async StartAsyncTaskAsync(taskOrAsyncFunction: (() => PromiseLike<void>) | Promise<void>, showErrorAlert = false): Promise<void>
     {
         try
         {
-            await task;
+            if (Util.IsFunction(taskOrAsyncFunction))
+            {
+                const func = taskOrAsyncFunction as (() => PromiseLike<void>);
+                await func();
+            }
+            else
+            {
+                const task = taskOrAsyncFunction as Promise<void>;
+                await task;
+            }
         }
         catch (ex)
         {
@@ -75,6 +84,8 @@ export class Task
             {
                 alert(ex);
             }
+
+            throw ex;
         }
     }
 }

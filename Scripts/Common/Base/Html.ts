@@ -28,11 +28,16 @@
 // PROCESS MAY BE SERVED ON EITHER PARTY IN THE MANNER AUTHORIZED BY APPLICABLE
 // LAW OR COURT RULE.
 
+import { Dialog } from "../../Imports";
+import { Str } from "./Str";
+import { Util } from "./Util";
+
 // Author: Daiyuu Nobori
 // Html Utility
 
 export class Html
 {
+
     public static NativateTo(url: string): void
     {
         location.href = url;
@@ -42,6 +47,67 @@ export class Html
     {
         textBox.select();
         textBox.focus();
+    }
+
+    public static async DialogAlertAsync(message: string, title = "", allowHtml = false, buttonColor = "is-link", icon = "fas fa-info-circle", okButtonText = "OK"): Promise<void>
+    {
+        const faIcon = Str.ParseFontAwsomeIconClassStr(icon);
+
+        if (!allowHtml) message = Str.EncodeHtml(message, undefined, true);
+
+        const result = await new Promise((resolve, reject) =>
+        {
+            Dialog.alert(
+                {
+                    message: message,
+                    title: Str.FilledOrUndefined(title),
+                    type: buttonColor,
+                    canCancel: false,
+                    hasIcon: faIcon ? true : false,
+                    iconPack: faIcon?.PackName ?? "",
+                    icon: faIcon?.IconName ?? "",
+                    confirmText: Str.NonNullTrim(okButtonText),
+
+                    onConfirm: () => resolve(true),
+                    onCancel: () => reject(true),
+                });
+        });
+
+    }
+
+    public static async DialogConfirmAsync(message: string, title = "", allowHtml = false, buttonColor = "is-link", icon = "fas fa-question-circle", defaultOk = false, okButtonText = "OK", cancelButtonText = "Cancel"): Promise<boolean>
+    {
+        const faIcon = Str.ParseFontAwsomeIconClassStr(icon);
+
+        if (!allowHtml) message = Str.EncodeHtml(message, undefined, true);
+
+        try
+        {
+            const result = await new Promise((resolve, reject) =>
+            {
+                Dialog.confirm(
+                    {
+                        message: message,
+                        title: Str.FilledOrUndefined(title),
+                        type: buttonColor,
+                        hasIcon: faIcon ? true : false,
+                        iconPack: faIcon?.PackName ?? "",
+                        icon: faIcon?.IconName ?? "",
+                        confirmText: Str.NonNullTrim(okButtonText),
+                        cancelText: Str.NonNullTrim(cancelButtonText),
+                        focusOn: defaultOk ? "confirm" : "cancel",
+
+                        onConfirm: () => resolve(true),
+                        onCancel: () => reject(false),
+                    });
+            });
+
+            return result as boolean;
+        }
+        catch (ex)
+        {
+            return false;
+        }
     }
 }
 
