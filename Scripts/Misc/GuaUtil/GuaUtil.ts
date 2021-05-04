@@ -262,21 +262,46 @@ export abstract class GuaLogicalKeyboard
 export class GuaConnectedKeyboard extends GuaLogicalKeyboard
 {
     public readonly Client: Guacamole.Client;
+    public readonly Profile: any;
 
-    public constructor(client: Guacamole.Client)
+    public readonly SvcType: string;
+    public readonly IsRdp: boolean;
+    public readonly IsVnc: boolean;
+
+    public readonly IsDebug: boolean;
+
+    public constructor(client: Guacamole.Client, profile: any, svcType: string)
     {
         super();
 
         this.Client = client;
+
+        this.Profile = profile;
+        this.SvcType = svcType;
+
+        this.IsRdp = Str.IsSamei(this.SvcType, "rdp");
+        this.IsVnc = !this.IsRdp;
+
+        this.IsDebug = this.Profile.Preference.EnableDebug;
+
+        if (this.IsDebug)
+        {
+            Util.Debug(`GuaConnectedKeyboard: SvcType = ${this.SvcType}`);
+            Util.Debug(`GuaConnectedKeyboard: IsRdp = ${this.IsRdp}`);
+            Util.Debug(`GuaConnectedKeyboard: IsVnc = ${this.IsVnc}`);
+        }
     }
 
     protected async PressVirtualKeyImplAsync(code: number, pressed: boolean): Promise<void>
     {
-        const keyCodeString = GuaUtil.KeyCodeToStr(code);
+        if (this.IsDebug)
+        {
+            const keyCodeString = GuaUtil.KeyCodeToStr(code);
 
-        const tmp = `${keyCodeString} (${Str.To0xHex(code)}): ${pressed ? "Down" : "Up"}`;
+            const tmp = `${keyCodeString} (${Str.To0xHex(code)}): ${pressed ? "Down" : "Up"}`;
 
-        Util.Debug(tmp);
+            Util.Debug(tmp);
+        }
 
         this.Client.sendKeyEvent(pressed, code);
     }
@@ -296,6 +321,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
     public readonly SvcType: string;
     public readonly IsRdp: boolean;
     public readonly IsVnc: boolean;
+    public readonly IsDebug: boolean;
 
     Win_LastState_Shift1 = false;
     Win_LastState_Shift2 = false;
@@ -306,11 +332,21 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
         super();
 
         this.Physical = physical;
+
         this.Profile = profile;
         this.SvcType = svcType;
 
         this.IsRdp = Str.IsSamei(this.SvcType, "rdp");
         this.IsVnc = !this.IsRdp;
+
+        this.IsDebug = this.Profile.Preference.EnableDebug;
+
+        if (this.IsDebug)
+        {
+            Util.Debug(`GuaComfortableKeyboard: SvcType = ${this.SvcType}`);
+            Util.Debug(`GuaComfortableKeyboard: IsRdp = ${this.IsRdp}`);
+            Util.Debug(`GuaComfortableKeyboard: IsVnc = ${this.IsVnc}`);
+        }
     }
 
     protected async PressVirtualKeyImplAsync(code: number, pressed: boolean): Promise<void>
