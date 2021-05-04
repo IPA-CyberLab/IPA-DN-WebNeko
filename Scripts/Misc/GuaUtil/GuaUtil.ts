@@ -356,6 +356,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
     protected async PhysicalToVirtualOperationImplAsync(code: number, pressed: boolean): Promise<boolean>
     {
+        const pref = this.Profile.Preference;
+
         // Chrome 対応: "Meta" キーが押されたら、Windows キーが押されたものと置換する
         if (code === GuaKeyCodes.Meta1 || code === GuaKeyCodes.Meta2)
         {
@@ -363,7 +365,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
         }
 
         // Windows キーに関する特殊な動作
-        if (code === GuaKeyCodes.Win)
+        if (pref.Win_ShiftWin && code === GuaKeyCodes.Win)
         {
             if (pressed)
             {
@@ -404,7 +406,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-        else if (this.Win_InState)
+        else if (pref.Win_ShiftWin && this.Win_InState)
         {
             // Windows キーが押されたときに、a ～ z, A ～ Z のキーが新たに押された場合は、チョン！という形で一瞬そのキーを押してすぐに離す
             if (code >= Str.CharToAscii("A") && code <= Str.CharToAscii("Z"))
@@ -427,7 +429,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
                 }
             }
         }
-        else if ((this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
+        else if (pref.Cad_CtrlAltEnd &&
+            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
             (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt2]) &&
             code === GuaKeyCodes.End &&
             pressed)
@@ -441,7 +444,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-        else if ((this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
+        else if (pref.Cad_CtrlAltHome &&
+            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
             (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt2]) &&
             code === GuaKeyCodes.Home &&
             pressed)
@@ -455,7 +459,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-        else if ((this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
+        else if (pref.Cad_CtrlAltBackspace &&
+            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
             (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt2]) &&
             code === GuaKeyCodes.Backspace &&
             pressed)
@@ -469,7 +474,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-        else if (this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] && code === GuaKeyCodes.Space && pressed)
+        else if (pref.Ime_LeftCtrlSpace &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] && code === GuaKeyCodes.Space && pressed)
         {
             // IME の ON/OFF の切替え ホットキー その 1: 左 Ctrl + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Control1, false);
@@ -499,7 +505,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-        else if (this.CurrentPhysicalKeyStates[GuaKeyCodes.Shift1] && code === GuaKeyCodes.Space && pressed)
+        else if (pref.Ime_LeftShiftSpace &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Shift1] && code === GuaKeyCodes.Space && pressed)
         {
             // IME の ON/OFF の切替え ホットキー その 2: 左 Shift + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Shift1, false);
@@ -529,7 +536,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-        else if (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] && code === 0xA0 && pressed)
+        else if (pref.Ime_OptionSpace &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] && code === 0xA0 && pressed)
         {
             // IME の ON/OFF の切替え ホットキー その 3: Mac における左 Option + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
@@ -559,16 +567,6 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-        //else if (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] && code === GuaKeyCodes.Convert && pressed)
-        //{
-        //    await this.PressVirtualKeyAsync(0x60, true);
-
-        //    await Task.Delay(300);
-
-        //    await this.PressVirtualKeyAsync(0x60, false);
-
-        //    return true;
-        //}
 
         return false;
     }

@@ -37,18 +37,26 @@ import { Util } from "./Util";
 
 export class Html
 {
+    // フルスクリーン時の画面サイズを返す
+    public static GetFullScreenSize(): [number, number]
+    {
+        return [Math.max(window.screen.width, 320), Math.max(window.screen.height, 240)];
+    }
 
+    // ジャンプ
     public static NativateTo(url: string): void
     {
         location.href = url;
     }
 
+    // フォーカス設定
     public static FocusEx(textBox: HTMLInputElement): void
     {
         textBox.select();
         textBox.focus();
     }
 
+    // メッセージボックス (アラート) の表示
     public static async DialogAlertAsync(message: string, title = "", allowHtml = false, buttonColor = "is-link", icon = "fas fa-info-circle", okButtonText = "OK"): Promise<void>
     {
         const faIcon = Str.ParseFontAwsomeIconClassStr(icon);
@@ -75,6 +83,7 @@ export class Html
 
     }
 
+    // メッセージボックス (OK / Cancel) の表示
     public static async DialogConfirmAsync(message: string, title = "", allowHtml = false, buttonColor = "is-link", icon = "fas fa-question-circle", defaultOk = false, okButtonText = "OK", cancelButtonText = "Cancel"): Promise<boolean>
     {
         const faIcon = Str.ParseFontAwsomeIconClassStr(icon);
