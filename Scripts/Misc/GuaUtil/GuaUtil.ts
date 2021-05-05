@@ -594,3 +594,13 @@ export class GuaUtil
     }
 }
 
+// Guac に対してサイズ変更命令を送付する関数。ただし最大で 1 秒に 1 回しか送付しない
+export class GuaResizeManager
+{
+
+    public Resize(width: number, height: number): void
+    {
+    }
+}
+
+
