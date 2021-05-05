@@ -567,7 +567,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-
+        
         return false;
     }
 }
