@@ -327,6 +327,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
     Win_LastState_Shift2 = false;
     Win_InState = false;
 
+    Win_Ctrl2Alt2_InState = false;
+
     public constructor(physical: GuaLogicalKeyboard, profile: any, svcType: string)
     {
         super();
@@ -429,9 +431,41 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
                 }
             }
         }
+        else if (pref.Win_Ctrl2Alt2 &&
+            !this.Win_Ctrl2Alt2_InState &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2] &&
+            code === GuaKeyCodes.Alt2 && pressed)
+        {
+            // 既に 右 Ctrl が押されている状態で右 Alt が押された場合は、Windows キーが押されたものとみなす
+
+            // まず右 Ctrl を離したことにする
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Control2, false);
+
+            // Windows を押したことにする
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Win, true);
+
+            // Win_Ctrl2Alt2_InState フラグを立てる
+            this.Win_Ctrl2Alt2_InState = true;
+
+            // 右 Alt は押されなかったことにする
+            return true;
+        }
+        else if (pref.Win_Ctrl2Alt2 &&
+            this.Win_Ctrl2Alt2_InState &&
+            code === GuaKeyCodes.Alt2 && !pressed)
+        {
+            // Win_Ctrl2Alt2_InState フラグが有効なとき、右 Alt が離されたときは Windows を離し、かつフラグを解除する
+
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Win, false);
+
+            this.Win_Ctrl2Alt2_InState = false;
+
+            // 右 Alt は操作されていないことにする
+            return true;
+        }
         else if (pref.Cad_CtrlAltEnd &&
-            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
-            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt2]) &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] &&
             code === GuaKeyCodes.End &&
             pressed)
         {
@@ -445,8 +479,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             return true;
         }
         else if (pref.Cad_CtrlAltHome &&
-            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
-            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt2]) &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] &&
             code === GuaKeyCodes.Home &&
             pressed)
         {
@@ -460,8 +494,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             return true;
         }
         else if (pref.Cad_CtrlAltBackspace &&
-            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Control2]) &&
-            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt2]) &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1] &&
             code === GuaKeyCodes.Backspace &&
             pressed)
         {
@@ -474,12 +508,47 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
+        else if (pref.Cad_CtrlShiftBackspace &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] &&
+            this.CurrentPhysicalKeyStates[GuaKeyCodes.Shift1] &&
+            code === GuaKeyCodes.Backspace &&
+            pressed)
+        {
+            // 既に Ctrl + Shift が押されている状態で Backspace が押された場合、まず Shift を離し、次に Alt + Delete を押して、すぐに離し、また Shift を押すのである。
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Shift1, false);
+            await Task.Delay(100);
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Delete, true);
+
+            await Task.Delay(300);
+
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Delete, false);
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            await Task.Delay(100);
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Shift1, true);
+
+            return true;
+        }
+        else if (pref.Tab_AltShift &&
+            (this.CurrentPhysicalKeyStates[GuaKeyCodes.Alt1]) &&
+            code === GuaKeyCodes.Shift1 &&
+            pressed)
+        {
+            // 既に Alt が押されている状態で Shift が押された場合、Shift の代わりに Tab を押すのである。
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Tab, true);
+
+            await Task.Delay(300);
+
+            await this.PressVirtualKeyAsync(GuaKeyCodes.Tab, false);
+
+            return true;
+        }
         else if (pref.Ime_LeftCtrlSpace &&
             this.CurrentPhysicalKeyStates[GuaKeyCodes.Control1] && code === GuaKeyCodes.Space && pressed)
         {
             // IME の ON/OFF の切替え ホットキー その 1: 左 Ctrl + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Control1, false);
-            
+
             if (this.IsRdp || Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
             {
                 // システムモード または 英語キーボード
@@ -567,7 +636,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
             return true;
         }
-        
+
         return false;
     }
 }
