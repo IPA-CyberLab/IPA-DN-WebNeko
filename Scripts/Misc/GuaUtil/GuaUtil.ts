@@ -31,6 +31,7 @@
 import Guacamole from "../../../Libraries/guacamole-common-js-1.3.0/guacamole-common";
 import { Str } from "../../Common/Base/Str";
 import { Task, AsyncLock } from "../../Common/Base/Task";
+import { Time } from "../../Common/Base/Time";
 import { Util } from "../../Common/Base/Util"
 
 // Author: Daiyuu Nobori
@@ -40,6 +41,11 @@ export const GuaConsts =
 {
     MaxNumKeys: 0xFFFF + 1,
     InvalidKeycode: 0xFFFF,
+
+    MinWidth: 800,
+    MinHeight: 600,
+    MaxWidth: 5760,
+    MaxHeight: 2400,
 };
 
 // Guacamole のステート一覧表
@@ -666,10 +672,123 @@ export class GuaUtil
 // Guac に対してサイズ変更命令を送付する関数。ただし最大で 1 秒に 1 回しか送付しない
 export class GuaResizeManager
 {
-    public get Test(): number { return 1122334411.123; }
+    private readonly Guac: Guacamole.Client;
 
+    public static readonly DefaultInitialInterval = 1000;
+    public static readonly DefaultMaxInterval = 5000;
+
+    private InitialInterval: number;
+    private MaxInterval: number;
+    private IntervalTimes = 0;
+
+    //private CurrentWidth: number;
+    //private CurrentHeight: number;
+
+    private NextWidth: number;
+    private NextHeight: number;
+
+    private GuacLastWidth: number;
+    private GuacLastHeight: number;
+
+    constructor(guac: Guacamole.Client, initialWidth: number, initialHeight: number, initialInterval = GuaResizeManager.DefaultInitialInterval, maxInterval = GuaResizeManager.DefaultMaxInterval)
+    {
+        initialWidth = Math.min(Math.max(initialWidth, GuaConsts.MinWidth), GuaConsts.MaxWidth);
+        initialHeight = Math.min(Math.max(initialHeight, GuaConsts.MinHeight), GuaConsts.MaxHeight);
+
+        initialInterval = Math.max(initialInterval, 1000);
+        maxInterval = Math.max(maxInterval, 1000);
+
+        this.InitialInterval = initialInterval;
+        this.MaxInterval = maxInterval;
+
+        this.Guac = guac;
+
+        //this.CurrentWidth = initialWidth;
+        //this.CurrentHeight = initialHeight;
+
+        this.NextWidth = initialWidth;
+        this.NextHeight = initialHeight;
+
+        this.GuacLastWidth = guac.getDisplay().getWidth();
+        this.GuacLastHeight = guac.getDisplay().getHeight();
+
+        this.ResizeNowCore(this.NextWidth, this.NextHeight);
+    }
+
+    private IsLazyResizeProcessing = false;
+
+    private async LazyResizeAsync(): Promise<void>
+    {
+        try
+        {
+            this.IntervalTimes++;
+
+            const interval = Math.min(this.InitialInterval * this.IntervalTimes, this.MaxInterval);
+
+            Util.Debug(`Interval = ${interval}`);
+
+            await Task.Delay(interval);
+
+            this.ResizeNowCore(this.NextWidth, this.NextHeight);
+        }
+        catch { }
+
+        this.IsLazyResizeProcessing = false;
+    }
+
+    private LastResizeRequestedTick = 0;
+
+    // リサイズ要求
     public Resize(width: number, height: number): void
     {
+        const now = Time.Tick64;
+
+        width = Math.min(Math.max(width, GuaConsts.MinWidth), GuaConsts.MaxWidth);
+        height = Math.min(Math.max(height, GuaConsts.MinHeight), GuaConsts.MaxHeight);
+
+        if (this.NextWidth !== width || this.NextHeight !== height)
+        {
+            this.NextWidth = width;
+            this.NextHeight = height;
+
+            if (this.LastResizeRequestedTick === 0 || now >= (this.LastResizeRequestedTick + this.InitialInterval * this.IntervalTimes))
+            {
+                this.IntervalTimes = 0;
+            }
+            this.LastResizeRequestedTick = now;
+
+            if (!this.IsLazyResizeProcessing)
+            {
+                this.IsLazyResizeProcessing = true;
+
+                this.ResizeNowCore(this.NextWidth, this.NextHeight);
+
+                Task.StartAsyncTaskAsync(
+                    this.LazyResizeAsync()
+                );
+            }
+        }
+    }
+
+    // リサイズの実行の内部処理 (変更があった場合のみ)
+    private ResizeNowCore(width: number, height: number): boolean
+    {
+        width = Math.min(Math.max(width, GuaConsts.MinWidth), GuaConsts.MaxWidth);
+        height = Math.min(Math.max(height, GuaConsts.MinHeight), GuaConsts.MaxHeight);
+
+        // 変化があった場合のみリサイズを実行する
+        if (this.GuacLastWidth !== width || this.GuacLastHeight !== height)
+        {
+            Util.Debug(`ResizeNowCore: ${width} ${height}`);
+            this.Guac.sendSize(width, height);
+
+            this.GuacLastWidth = width;
+            this.GuacLastHeight = height;
+
+            return true;
+        }
+
+        return false;
     }
 }
 

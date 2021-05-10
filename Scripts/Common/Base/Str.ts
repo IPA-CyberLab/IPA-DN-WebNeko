@@ -161,6 +161,12 @@ export class Str
         }
     }
 
+    // 文字列が含まれるか?
+    public static InStr(str?: string, keyword?: string, caseSensitive = false): boolean
+    {
+        return Str.SearchStr(str, keyword, 0, caseSensitive) !== -1;
+    }
+
     // HTML デコード
     public static DecodeHtml(str?: string): string
     {

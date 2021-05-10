@@ -37,6 +37,12 @@ import { Util } from "./Util";
 
 export class Html
 {
+    // フルスクリーンに対応しているかどうか
+    public static IsFullScreenSupported(): boolean
+    {
+        return document.fullscreenEnabled;
+    }
+
     // フルスクリーン時の画面サイズを返す
     public static GetFullScreenSize(): [number, number]
     {
