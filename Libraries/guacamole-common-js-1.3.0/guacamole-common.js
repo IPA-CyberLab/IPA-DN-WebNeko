@@ -2108,7 +2108,11 @@ Guacamole.Client = function(tunnel) {
         if (mouseState.middle) buttonMask |= 2;
         if (mouseState.right)  buttonMask |= 4;
         if (mouseState.up)     buttonMask |= 8;
-        if (mouseState.down)   buttonMask |= 16;
+        if (mouseState.down) buttonMask |= 16;
+
+        // dnobori
+        if (mouseState.back) buttonMask |= 32;
+        if (mouseState.forward) buttonMask |= 64;
 
         // Send message
         tunnel.sendMessage("mouse", Math.floor(mouseState.x), Math.floor(mouseState.y), buttonMask);
@@ -8068,7 +8072,7 @@ Guacamole.Mouse = function(element) {
      */
     this.currentState = new Guacamole.Mouse.State(
         0, 0, 
-        false, false, false, false, false
+        false, false, false, false, false, false, false
     );
 
     /**
@@ -8168,6 +8172,14 @@ Guacamole.Mouse = function(element) {
             case 2:
                 guac_mouse.currentState.right = true;
                 break;
+
+            // dnobori
+            case 3:
+                guac_mouse.currentState.back = true;
+                break;
+            case 4:
+                guac_mouse.currentState.forward = true;
+                break;
         }
 
         if (guac_mouse.onmousedown)
@@ -8192,6 +8204,14 @@ Guacamole.Mouse = function(element) {
                 break;
             case 2:
                 guac_mouse.currentState.right = false;
+                break;
+
+            // dnobori
+            case 3:
+                guac_mouse.currentState.back = false;
+                break;
+            case 4:
+                guac_mouse.currentState.forward = false;
                 break;
         }
 
@@ -8218,11 +8238,18 @@ Guacamole.Mouse = function(element) {
         // Release all buttons
         if (guac_mouse.currentState.left
             || guac_mouse.currentState.middle
-            || guac_mouse.currentState.right) {
+            || guac_mouse.currentState.right
+            // dnobori
+            || guac_mouse.currentState.back
+            || guac_mouse.currentState.forward
+        )
+        {
 
             guac_mouse.currentState.left = false;
             guac_mouse.currentState.middle = false;
             guac_mouse.currentState.right = false;
+            guac_mouse.currentState.back = false;
+            guac_mouse.currentState.forward = false;
 
             if (guac_mouse.onmouseup)
                 guac_mouse.onmouseup(guac_mouse.currentState);
@@ -8409,7 +8436,7 @@ Guacamole.Mouse = function(element) {
  * @param {Boolean} down Whether the down mouse button is pressed (the fifth
  *                       button, usually part of a scroll wheel). 
  */
-Guacamole.Mouse.State = function(x, y, left, middle, right, up, down) {
+Guacamole.Mouse.State = function(x, y, left, middle, right, up, down, /* dnobori */ back, forward) {
 
     /**
      * Reference to this Guacamole.Mouse.State.
@@ -8446,6 +8473,11 @@ Guacamole.Mouse.State = function(x, y, left, middle, right, up, down) {
      * @type {Boolean}
      */
     this.right = right;
+
+
+    // dnobori
+    this.back = back;
+    this.forward = forward;
 
     /**
      * Whether the up mouse button is currently pressed. This is the fourth
@@ -8546,7 +8578,7 @@ Guacamole.Mouse.Touchpad = function(element) {
      */
     this.currentState = new Guacamole.Mouse.State(
         0, 0, 
-        false, false, false, false, false
+        false, false, false, false, false, false, false
     );
 
     /**
@@ -8853,7 +8885,7 @@ Guacamole.Mouse.Touchscreen = function(element) {
      */
     this.currentState = new Guacamole.Mouse.State(
         0, 0,
-        false, false, false, false, false
+        false, false, false, false, false, false, false
     );
 
     /**

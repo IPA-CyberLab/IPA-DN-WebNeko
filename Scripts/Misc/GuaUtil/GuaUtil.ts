@@ -39,8 +39,8 @@ import { Util } from "../../Common/Base/Util"
 
 export const GuaConsts =
 {
-    MaxNumKeys: 0xFFFF + 1,
-    InvalidKeycode: 0xFFFF,
+    MaxNumKeys: 0xFFFF + 2,
+    InvalidKeycode: 0xFFFF + 1,
 
     MinWidth: 800,
     MinHeight: 600,
@@ -674,15 +674,12 @@ export class GuaResizeManager
 {
     private readonly Guac: Guacamole.Client;
 
-    public static readonly DefaultInitialInterval = 500;
-    public static readonly DefaultMaxInterval = 3000;
+    public static readonly DefaultInitialInterval = 100;
+    public static readonly DefaultMaxInterval = 100;
 
     private InitialInterval: number;
     private MaxInterval: number;
     private IntervalTimes = 0;
-
-    //private CurrentWidth: number;
-    //private CurrentHeight: number;
 
     private NextWidth: number;
     private NextHeight: number;
@@ -703,9 +700,6 @@ export class GuaResizeManager
 
         this.Guac = guac;
 
-        //this.CurrentWidth = initialWidth;
-        //this.CurrentHeight = initialHeight;
-
         this.NextWidth = initialWidth;
         this.NextHeight = initialHeight;
 
@@ -724,8 +718,6 @@ export class GuaResizeManager
             this.IntervalTimes++;
 
             const interval = Math.min(this.InitialInterval * this.IntervalTimes, this.MaxInterval);
-
-            Util.Debug(`Interval = ${interval}`);
 
             await Task.Delay(interval);
 
@@ -779,7 +771,6 @@ export class GuaResizeManager
         // 変化があった場合のみリサイズを実行する
         if (this.GuacLastWidth !== width || this.GuacLastHeight !== height)
         {
-            Util.Debug(`ResizeNowCore: ${width} ${height}`);
             this.Guac.sendSize(width, height);
 
             this.GuacLastWidth = width;
