@@ -12943,6 +12943,7 @@ Guacamole.HTTPTunnel.prototype = new Guacamole.Tunnel();
  */
 Guacamole.WebSocketTunnel = function(tunnelURL) {
 
+    var firstPacketData = "";
     /**
      * Reference to this WebSocket tunnel.
      * @private
@@ -13139,7 +13140,14 @@ Guacamole.WebSocketTunnel = function(tunnelURL) {
         // Connect socket
         socket = new WebSocket(tunnelURL + "?" + data, "guacamole");
 
-        socket.onopen = function(event) {
+        socket.onopen = function (event)
+        {
+            // dnobori 2021/06/30
+            if (tunnel.firstPacketData.length >= 1)
+            {
+                socket.send(tunnel.firstPacketData);
+            }
+
             reset_timeout();
 
             // Ping tunnel endpoint regularly to test connection stability
