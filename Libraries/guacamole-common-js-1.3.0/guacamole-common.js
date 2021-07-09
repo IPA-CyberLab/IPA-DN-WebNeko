@@ -7160,8 +7160,10 @@ Guacamole.Layer = function(width, height) {
     {
         const lines = text.split("\n");
 
-        for (let line of lines)
+        for (let i = 0; i < lines.length;i++)
         {
+            let line = lines[i];
+
             line = line.trim();
 
             //console.log("draw " + line + "  " + x + "   " + y);
@@ -7171,7 +7173,13 @@ Guacamole.Layer = function(width, height) {
             //console.log(rect);
 
             const width = rect.width;
-            const height = rect.actualBoundingBoxAscent + rect.actualBoundingBoxDescent + watermark_NewLineMargin;
+            let height = rect.actualBoundingBoxAscent + rect.actualBoundingBoxDescent + watermark_NewLineMargin;
+
+            if (isNaN(height))
+            {
+                // for IE
+                height = 14;
+            }
 
             dc.fillText(line, x, y);
 
@@ -7188,16 +7196,25 @@ Guacamole.Layer = function(width, height) {
 
         let maxWidth = 0;
 
-        for (let line of lines)
+        for (let i = 0; i < lines.length; i++)
         {
+            let line = lines[i];
+
             line = line.trim();
 
             //console.log("draw " + line + "  " + x + "   " + y);
 
             const rect = dc.measureText(line);
+            //console.log(dc);
 
             const width = rect.width;
-            const height = rect.actualBoundingBoxAscent + rect.actualBoundingBoxDescent + watermark_NewLineMargin;
+            let height = rect.actualBoundingBoxAscent + rect.actualBoundingBoxDescent + watermark_NewLineMargin;
+
+            if (isNaN(height))
+            {
+                // for IE
+                height = 14;
+            }
 
             y += height;
 
@@ -7224,8 +7241,10 @@ Guacamole.Layer = function(width, height) {
 
         function DetermineIfWatermarkRectOverlapsExisting(o, text_x, text_y, text_width, text_height)
         {
-            for (let p of o)
+            for (let i = 0; i < o.length; i++)
             {
+                const p = o[i];
+
                 const r1 = {
                     left: p.x, top: p.y, right: p.x + text_width, bottom: p.y + text_height
                 };
@@ -7249,6 +7268,7 @@ Guacamole.Layer = function(width, height) {
         dc.strokeStyle = watermark_TextColor1;
         dc.font = watermark_FontName1;
         const r1 = dn_get_multiline_text_rect(dc, text1);
+        //console.log(r1);
 
         dc.fillStyle = watermark_TextColor2;
         dc.strokeStyle = watermark_TextColor2;
@@ -7323,8 +7343,14 @@ Guacamole.Layer = function(width, height) {
 
             const o = dn_GenerateRandomWatermarkPlacePointList(dc, width, height, layer.watermark_Text1, layer.watermark_Text2);
 
-            for (let p of o)
+            //console.log("" + width + " " + height + " " + layer.watermark_Text1 + " " + layer.watermark_Text2 );
+
+            for (let i = 0; i < o.length;i++)
             {
+                const p = o[i];
+
+                //console.log(p);
+
                 dc.fillStyle = watermark_TextColor1;
                 dc.strokeStyle = watermark_TextColor1;
                 dc.font = watermark_FontName1;

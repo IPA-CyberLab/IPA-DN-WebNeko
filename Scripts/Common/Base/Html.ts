@@ -37,6 +37,36 @@ import { Util } from "./Util";
 
 export class Html
 {
+    // Web ブラウザの種類を取得
+    public static GetBrowserType(): string
+    {
+        if ((navigator.userAgent.indexOf("Opera") || navigator.userAgent.indexOf("OPR")) !== -1)
+        {
+            return "Opera";
+        }
+        else if (navigator.userAgent.indexOf("Chrome") !== -1)
+        {
+            return "Chrome";
+        }
+        else if (navigator.userAgent.indexOf("Safari") !== -1)
+        {
+            return "Safari";
+        }
+        else if (navigator.userAgent.indexOf("Firefox") !== -1)
+        {
+            return "Firefox";
+        }
+        // @ts-ignore
+        else if ((navigator.userAgent.indexOf("MSIE") !== -1) || (!!document.documentMode === true))
+        {
+            return "IE";
+        }
+        else
+        {
+            return "Unknown";
+        }
+    }
+
     // フルスクリーンに対応しているかどうか
     public static IsFullScreenSupported(): boolean
     {
@@ -132,6 +162,23 @@ export class Html
         catch (ex)
         {
             return false;
+        }
+    }
+
+    // ページ遷移時の警告の表示 / 非表示の設定
+    public static SetPreventPageUnload(set = false): void
+    {
+        if (set)
+        {
+            window.onbeforeunload = function (ev: BeforeUnloadEvent): void
+            {
+                ev.preventDefault();
+                ev.returnValue = "Are you sure you want to close this web page?";
+            }
+        }
+        else
+        {
+            window.onbeforeunload = null;
         }
     }
 }
