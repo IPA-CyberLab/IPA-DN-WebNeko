@@ -63,11 +63,16 @@ export class Html
     }
 
     // メッセージボックス (アラート) の表示
-    public static async DialogAlertAsync(message: string, title = "", allowHtml = false, buttonColor = "is-link", icon = "fas fa-info-circle", okButtonText = "OK"): Promise<void>
+    public static async DialogAlertAsync(message: string, title = "", allowHtml = false, buttonColor = "is-link", icon = "fas fa-info-circle", okButtonText = "OK", bold = false): Promise<void>
     {
         const faIcon = Str.ParseFontAwsomeIconClassStr(icon);
 
         if (!allowHtml) message = Str.EncodeHtml(message, undefined, true);
+
+        if (bold)
+        {
+            message = "<strong>" + message + "</strong>";
+        }
 
         const result = await new Promise((resolve, reject) =>
         {
@@ -90,11 +95,16 @@ export class Html
     }
 
     // メッセージボックス (OK / Cancel) の表示
-    public static async DialogConfirmAsync(message: string, title = "", allowHtml = false, buttonColor = "is-link", icon = "fas fa-question-circle", defaultOk = false, okButtonText = "OK", cancelButtonText = "Cancel"): Promise<boolean>
+    public static async DialogConfirmAsync(message: string, title = "", allowHtml = false, buttonColor = "is-link", icon = "fas fa-question-circle", defaultOk = false, okButtonText = "OK", cancelButtonText = "Cancel", bold = false): Promise<boolean>
     {
         const faIcon = Str.ParseFontAwsomeIconClassStr(icon);
 
         if (!allowHtml) message = Str.EncodeHtml(message, undefined, true);
+
+        if (bold)
+        {
+            message = "<strong>" + message + "</strong>";
+        }
 
         try
         {
