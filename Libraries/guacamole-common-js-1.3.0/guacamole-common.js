@@ -7147,10 +7147,9 @@ Guacamole.Layer = function(width, height) {
     // (やっつけ実装)
     var dn_is_draw_watermark = false;
     var dn_watermark_canvas = document.createElement("canvas");
-    var watermark_FontName1 = "Meiryo UI";
-    var watermark_FontName2 = "Meiryo UI";
-    var watermark_FontSize1 = 14;
-    var watermark_FontSize2 = 9;
+    var watermark_CommonFontName = "'Meiryo UI', 'Meiryo', 'Hiragino Kaku Gothic Pro', 'Segoe UI', 'Lucida Grande', 'Tahoma', 'Verdana', 'Arial', 'Geneva', 'Helvetica', 'sans-serif', 'MS PGothic', 'MS UI Gothic', 'Osaka'";
+    var watermark_FontName1 = "bold 14pt " + watermark_CommonFontName;
+    var watermark_FontName2 = "bold 9pt " + watermark_CommonFontName;
     var watermark_Text1 = "画面撮影・情報持出等の行為禁止！";
     var watermark_Text2 = "シン・テレワーク作業中 ログイン日時: AAAA 月 BB 日 CC 時 DD 分 EE 秒\nAAAAAAAAAAAAABBBBBBBBB\n端末: XXXXXXXXXXXXXXX\n端末: XXXXXXXXXXXXXXX\n端末: XXXXXXXXXXXXXXX\n端末: XXXXXXXXXXXXXXX\n";
     var watermark_NewLineMargin = 4;
@@ -7250,12 +7249,12 @@ Guacamole.Layer = function(width, height) {
 
         dc.fillStyle = watermark_TextColor1;
         dc.strokeStyle = watermark_TextColor1;
-        dc.font = "bold " + watermark_FontSize1 + "pt '" + watermark_FontName1 + "'";
+        dc.font = watermark_FontName1;
         const r1 = dn_get_multiline_text_rect(dc, watermark_Text1);
 
         dc.fillStyle = watermark_TextColor2;
         dc.strokeStyle = watermark_TextColor2;
-        dc.font = "bold " + watermark_FontSize2 + "pt '" + watermark_FontName2 + "'";
+        dc.font = watermark_FontName2;
         const r2 = dn_get_multiline_text_rect(dc, watermark_Text2);
 
         const text_width = Math.max(r1.width, r2.width);
@@ -7316,7 +7315,7 @@ Guacamole.Layer = function(width, height) {
 
             dc.fillStyle = watermark_TextColor2;
             dc.strokeStyle = watermark_TextColor2;
-            dc.font = "bold " + watermark_FontSize2 + "pt '" + watermark_FontName2 + "'";
+            dc.font = watermark_FontName2;
 
             const r1 = dn_get_multiline_text_rect(dc, watermark_Text1);
 
@@ -7330,12 +7329,12 @@ Guacamole.Layer = function(width, height) {
             {
                 dc.fillStyle = watermark_TextColor1;
                 dc.strokeStyle = watermark_TextColor1;
-                dc.font = "bold " + watermark_FontSize1 + "pt '" + watermark_FontName1 + "'";
+                dc.font = watermark_FontName1;
                 dn_draw_multiline_text(dc, p.x, p.y, watermark_Text1);
 
                 dc.fillStyle = watermark_TextColor2;
                 dc.strokeStyle = watermark_TextColor2;
-                dc.font = "bold " + watermark_FontSize2 + "pt '" + watermark_FontName2 + "'";
+                dc.font = watermark_FontName2;
                 dn_draw_multiline_text(dc, p.x, p.y + r1.height, watermark_Text2);
                 
             }
@@ -7351,7 +7350,7 @@ Guacamole.Layer = function(width, height) {
             const dcc = layer.dn_watermark_canvas;
 
             const oldAlpha = target_dc.globalAlpha;
-            target_dc.globalAlpha = 0.5;
+            target_dc.globalAlpha = watermark_Alpha / 255.0;
             target_dc.drawImage(dcc, x, y, w, h, x, y, w, h);
             target_dc.globalAlpha = oldAlpha;
         }
