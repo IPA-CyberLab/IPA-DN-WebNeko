@@ -674,8 +674,8 @@ export class GuaResizeManager
 {
     private readonly Guac: Guacamole.Client;
 
-    public static readonly DefaultInitialInterval = 100;
-    public static readonly DefaultMaxInterval = 100;
+    public static readonly DefaultInitialInterval = 1500;
+    public static readonly DefaultMaxInterval = 7000;
 
     private InitialInterval: number;
     private MaxInterval: number;
