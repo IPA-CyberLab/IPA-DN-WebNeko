@@ -3613,6 +3613,8 @@ Guacamole.Display = function() {
     // Create default layer
     var default_layer = new Guacamole.Display.VisibleLayer(displayWidth, displayHeight);
 
+    default_layer.dn_is_draw_watermark = true;
+
     // Create cursor layer
     var cursor = new Guacamole.Display.VisibleLayer(0, 0);
     cursor.setChannelMask(Guacamole.Layer.SRC);
@@ -7140,6 +7142,221 @@ Guacamole.Layer = function(width, height) {
         0xF: "lighter"
     };
 
+
+    // 画面撮影・キャプチャ防止のための電子透かし機能
+    // (やっつけ実装)
+    var dn_is_draw_watermark = false;
+    var dn_watermark_canvas = document.createElement("canvas");
+    var watermark_FontName1 = "Meiryo UI";
+    var watermark_FontName2 = "Meiryo UI";
+    var watermark_FontSize1 = 14;
+    var watermark_FontSize2 = 9;
+    var watermark_Text1 = "画面撮影・情報持出等の行為禁止！";
+    var watermark_Text2 = "シン・テレワーク作業中 ログイン日時: AAAA 月 BB 日 CC 時 DD 分 EE 秒\nAAAAAAAAAAAAABBBBBBBBB\n端末: XXXXXXXXXXXXXXX\n端末: XXXXXXXXXXXXXXX\n端末: XXXXXXXXXXXXXXX\n端末: XXXXXXXXXXXXXXX\n";
+    var watermark_NewLineMargin = 4;
+    var watermark_TextColor1 = "#02C851";
+    var watermark_TextColor2 = "#02C851";
+    var watermark_Alpha = 70; // 20
+    var watermark_Margin = 15;
+
+    var dn_draw_multiline_text = function dn_draw_multiline_text(dc, x, y, text)
+    {
+        const lines = text.split("\n");
+
+        for (let line of lines)
+        {
+            line = line.trim();
+
+            //console.log("draw " + line + "  " + x + "   " + y);
+
+            const rect = dc.measureText(line);
+
+            //console.log(rect);
+
+            const width = rect.width;
+            const height = rect.actualBoundingBoxAscent + rect.actualBoundingBoxDescent + watermark_NewLineMargin;
+
+            dc.fillText(line, x, y);
+
+            y += height;
+        }
+    };
+
+    var dn_get_multiline_text_rect = function dn_get_multiline_text_rect(dc, text)
+    {
+        const lines = text.split("\n");
+
+        let x = 0;
+        let y = 0;
+
+        let maxWidth = 0;
+
+        for (let line of lines)
+        {
+            line = line.trim();
+
+            //console.log("draw " + line + "  " + x + "   " + y);
+
+            const rect = dc.measureText(line);
+
+            const width = rect.width;
+            const height = rect.actualBoundingBoxAscent + rect.actualBoundingBoxDescent + watermark_NewLineMargin;
+
+            y += height;
+
+            maxWidth = Math.max(maxWidth, width);
+        }
+
+        const ret = new Object();
+        ret.width = maxWidth;
+        ret.height = y;
+        return ret;
+    };
+
+    var dn_GenerateRandomWatermarkPlacePointList = function dn_GenerateRandomWatermarkPlacePointList(dc, width, height)
+    {
+        function IntersectRect(src1, src2)
+        {
+            if ((src1.left >= src2.right) || (src2.left >= src1.right) ||
+                (src1.top >= src2.bottom) || (src2.top >= src1.bottom))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        function DetermineIfWatermarkRectOverlapsExisting(o, text_x, text_y, text_width, text_height)
+        {
+            for (let p of o)
+            {
+                const r1 = {
+                    left: p.x, top: p.y, right: p.x + text_width, bottom: p.y + text_height
+                };
+                const r2 = {
+                    left: text_x, top: text_y, right: text_x + text_width, bottom: text_y + text_height
+                };
+                if (IntersectRect(r1, r2))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function getRandomInt(max)
+        {
+            return Math.floor(Math.random() * max);
+        }
+
+        dc.fillStyle = watermark_TextColor1;
+        dc.strokeStyle = watermark_TextColor1;
+        dc.font = "bold " + watermark_FontSize1 + "pt '" + watermark_FontName1 + "'";
+        const r1 = dn_get_multiline_text_rect(dc, watermark_Text1);
+
+        dc.fillStyle = watermark_TextColor2;
+        dc.strokeStyle = watermark_TextColor2;
+        dc.font = "bold " + watermark_FontSize2 + "pt '" + watermark_FontName2 + "'";
+        const r2 = dn_get_multiline_text_rect(dc, watermark_Text2);
+
+        const text_width = Math.max(r1.width, r2.width);
+        const text_height = r1.height + r2.height;
+
+        let o = [];
+
+        if (width > text_width && height > text_height)
+        {
+            for (let i = 0; ; i++)
+            {
+                let fail = true;
+                const num_retry = 300;
+
+                for (let k = 0; k < num_retry; k++)
+                {
+                    const x = getRandomInt(width - text_width);
+                    const y = getRandomInt(height - text_height);
+
+                    if (!DetermineIfWatermarkRectOverlapsExisting(o, x, y, text_width + watermark_Margin, text_height + watermark_Margin))
+                    {
+                        const p = {
+                            x: x,
+                            y: y,
+                        };
+
+                        o.push(p);
+
+                        fail = false;
+                        break;
+                    }
+                }
+
+                if (fail)
+                {
+                    break;
+                }
+            }
+        }
+
+        return o;
+    };
+
+    var dn_init_watermark = function dn_init_watermark(width, height)
+    {
+        if (layer.dn_is_draw_watermark)
+        {
+            const dcc = document.createElement("canvas");
+            dcc.width = width;
+            dcc.height = height;
+
+            const dc = dcc.getContext("2d");
+            dc.fillStyle = "#0000FF";
+            //dc.fillRect(0, 0, width, height);
+
+            const text1 = layer.text1;
+            const text2 = layer.text2;
+
+            dc.fillStyle = watermark_TextColor2;
+            dc.strokeStyle = watermark_TextColor2;
+            dc.font = "bold " + watermark_FontSize2 + "pt '" + watermark_FontName2 + "'";
+
+            const r1 = dn_get_multiline_text_rect(dc, watermark_Text1);
+
+            //dn_draw_multiline_text(dc, 0, 0, watermark_Text2);
+
+            //const r1 = dc.measureText(
+
+            const o = dn_GenerateRandomWatermarkPlacePointList(dc, width, height);
+
+            for (let p of o)
+            {
+                dc.fillStyle = watermark_TextColor1;
+                dc.strokeStyle = watermark_TextColor1;
+                dc.font = "bold " + watermark_FontSize1 + "pt '" + watermark_FontName1 + "'";
+                dn_draw_multiline_text(dc, p.x, p.y, watermark_Text1);
+
+                dc.fillStyle = watermark_TextColor2;
+                dc.strokeStyle = watermark_TextColor2;
+                dc.font = "bold " + watermark_FontSize2 + "pt '" + watermark_FontName2 + "'";
+                dn_draw_multiline_text(dc, p.x, p.y + r1.height, watermark_Text2);
+                
+            }
+
+            layer.dn_watermark_canvas = dcc;
+        }
+    };
+
+    var dn_draw_watermark = function dn_draw_watermark(target_dc, x, y, w, h)
+    {
+        if (layer.dn_is_draw_watermark)
+        {
+            const dcc = layer.dn_watermark_canvas;
+
+            const oldAlpha = target_dc.globalAlpha;
+            target_dc.globalAlpha = 0.5;
+            target_dc.drawImage(dcc, x, y, w, h, x, y, w, h);
+            target_dc.globalAlpha = oldAlpha;
+        }
+    };
+
     /**
      * Resizes the canvas element backing this Layer. This function should only
      * be used internally.
@@ -7201,6 +7418,8 @@ Guacamole.Layer = function(width, height) {
             // Acknowledge reset of stack (happens on resize of canvas)
             stackSize = 0;
             context.save();
+
+            dn_init_watermark(canvasWidth, canvasHeight);
 
         }
 
@@ -7353,6 +7572,10 @@ Guacamole.Layer = function(width, height) {
     this.drawImage = function(x, y, image) {
         if (layer.autosize) fitRect(x, y, image.width, image.height);
         context.drawImage(image, x, y);
+
+        // DN
+        dn_draw_watermark(context, x, y, image.width, image.height);
+
         empty = false;
     };
 
