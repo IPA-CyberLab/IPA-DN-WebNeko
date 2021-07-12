@@ -731,7 +731,7 @@ export class GuaResizeManager
     private LastResizeRequestedTick = 0;
 
     // リサイズ要求
-    public Resize(width: number, height: number): void
+    public Resize(width: number, height: number, force = false): void
     {
         const now = Time.Tick64;
 
@@ -743,21 +743,28 @@ export class GuaResizeManager
             this.NextWidth = width;
             this.NextHeight = height;
 
-            if (this.LastResizeRequestedTick === 0 || now >= (this.LastResizeRequestedTick + this.InitialInterval * this.IntervalTimes))
+            if (!force)
             {
-                this.IntervalTimes = 0;
+                if (this.LastResizeRequestedTick === 0 || now >= (this.LastResizeRequestedTick + this.InitialInterval * this.IntervalTimes))
+                {
+                    this.IntervalTimes = 0;
+                }
+                this.LastResizeRequestedTick = now;
+
+                if (!this.IsLazyResizeProcessing)
+                {
+                    this.IsLazyResizeProcessing = true;
+
+                    this.ResizeNowCore(this.NextWidth, this.NextHeight);
+
+                    Task.StartAsyncTaskAsync(
+                        this.LazyResizeAsync()
+                    );
+                }
             }
-            this.LastResizeRequestedTick = now;
-
-            if (!this.IsLazyResizeProcessing)
+            else
             {
-                this.IsLazyResizeProcessing = true;
-
                 this.ResizeNowCore(this.NextWidth, this.NextHeight);
-
-                Task.StartAsyncTaskAsync(
-                    this.LazyResizeAsync()
-                );
             }
         }
     }

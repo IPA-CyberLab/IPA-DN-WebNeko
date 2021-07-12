@@ -112,5 +112,12 @@ export class Util
 
         return JSON.parse(json);
     }
+
+    // 適当に乱数を生成
+    public static GetRandInt(max: number): number
+    {
+        return Math.floor(Math.random() * max);
+    }
+
 }
 
