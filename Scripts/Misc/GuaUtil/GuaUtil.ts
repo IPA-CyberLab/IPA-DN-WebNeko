@@ -335,6 +335,8 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
     Win_Ctrl2Alt2_InState = false;
 
+    ZenHan_CurrentMode = 0;
+
     public constructor(physical: GuaLogicalKeyboard, profile: any, svcType: string)
     {
         super();
@@ -555,9 +557,9 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             // IME の ON/OFF の切替え ホットキー その 1: 左 Ctrl + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Control1, false);
 
-            if (this.IsRdp || Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
+            if (Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
             {
-                // システムモード または 英語キーボード
+                // 英語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(0x60, true);
 
@@ -568,7 +570,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             }
             else
             {
-                // ユーザーモード かつ 日本語キーボード
+                // 日本語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
 
@@ -586,9 +588,9 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             // IME の ON/OFF の切替え ホットキー その 2: 左 Shift + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Shift1, false);
 
-            if (this.IsRdp || Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
+            if (Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
             {
-                // システムモード または 英語キーボード
+                // 英語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(0x60, true);
 
@@ -599,7 +601,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             }
             else
             {
-                // ユーザーモード かつ 日本語キーボード
+                // 日本語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
 
@@ -617,9 +619,9 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             // IME の ON/OFF の切替え ホットキー その 3: Mac における左 Option + Space
             await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
 
-            if (this.IsRdp || Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
+            if (Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
             {
-                // システムモード または 英語キーボード
+                // 英語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(0x60, true);
 
@@ -630,7 +632,7 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
             }
             else
             {
-                // ユーザーモード かつ 日本語キーボード
+                // 日本語キーボード
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
                 await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
 
@@ -638,6 +640,77 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
 
                 await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, false);
                 await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            }
+
+            return true;
+        }
+        else if (pref.Ime_ZenHan && code === GuaKeyCodes.Convert && pressed)
+        {
+            if (Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
+            {
+                // 英語キーボード
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                await this.PressVirtualKeyAsync(0x60, true);
+
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(0x60, false);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            }
+            else
+            {
+                // 日本語キーボード
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
+
+                await Task.Delay(100);
+
+                await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, false);
+                await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+            }
+
+            return true;
+        }
+        else if (pref.Ime_ZenHan &&(code === GuaKeyCodes.Zenkaku) || (code === GuaKeyCodes.Hankaku) && pressed)
+        {
+            let newMode = 1;
+            if (code === GuaKeyCodes.Zenkaku)
+            {
+                newMode = 2;
+            }
+
+            if (this.ZenHan_CurrentMode !== newMode)
+            {
+                this.ZenHan_CurrentMode = newMode;
+
+                if (Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
+                {
+                    // 英語キーボード
+                    await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                    await this.PressVirtualKeyAsync(0x60, true);
+
+                    await Task.Delay(100);
+
+                    await this.PressVirtualKeyAsync(0x60, false);
+                    await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+                }
+                else
+                {
+                    // 日本語キーボード
+                    await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, true);
+                    await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, true);
+
+                    await Task.Delay(100);
+
+                    await this.PressVirtualKeyAsync(GuaKeyCodes.ZenkakuHankaku, false);
+                    await this.PressVirtualKeyAsync(GuaKeyCodes.Alt1, false);
+                }
             }
 
             return true;
