@@ -1,4 +1,4 @@
-//declare module 'guacamole-common' {
+﻿//declare module 'guacamole-common' {
 /**
  * The namespace used by the Guacamole JavaScript API. Absolutely all classes
 defined by the Guacamole JavaScript API will be within this namespace.

@@ -1,4 +1,4 @@
-// isInteger polyfill for Internet Explorer
+﻿// isInteger polyfill for Internet Explorer
 if (!Object.entries)
 {
     Object.entries = function (obj: any): any
