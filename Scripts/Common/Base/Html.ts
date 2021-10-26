@@ -199,57 +199,39 @@ export class Html
     }
 }
 
-export class GuacAppClipboardData
+export class ClipboardUtil
 {
-    // From guacamole-client-1.3.0\guacamole\src\main\webapp\app\clipboard\types\ClipboardData.js
-    public Type: string;
-    public Data: string;
+    private CurrentData = "";
 
-    public constructor()
+    public async TryReadLocalClipboardAsync(): Promise<string>
     {
-        this.Type = "text/plain";
-        this.Data = "";
-    }
-}
-
-export class GuacAppClipboardService
-{
-    // From guacamole-client-1.3.0\guacamole\src\main\webapp\app\clipboard\services\clipboardService.js
-    public ClipboardData: GuacAppClipboardData;
-    public CLIPBOARD_READ_DELAY = 100;
-    public pendingRead: Promise<GuacAppClipboardData> | null = null;
-    public window: Window;
-    public document: Document;
-    public clipboardContent: HTMLTextAreaElement;
-    public selectionStack: Range[] = [];
-
-    public constructor(window: Window)
-    {
-        this.ClipboardData = new GuacAppClipboardData();
-        this.window = window;
-        this.document = this.window.document;
-        this.clipboardContent = this.document.createElement("textarea");
-        this.clipboardContent.className = "clipboard-service-target";
-        this.document.body.appendChild(this.clipboardContent);
-
-        this.clipboardContent.addEventListener("cut", this.stopEventPropagation);
-        this.clipboardContent.addEventListener("copy", this.stopEventPropagation);
-        this.clipboardContent.addEventListener("paste", this.stopEventPropagation);
-        this.clipboardContent.addEventListener("input", this.stopEventPropagation);
-    }
-
-    public stopEventPropagation(e: Event): void
-    {
-        e.stopPropagation();
-    }
-
-    public pushSelection(): void
-    {
-        const selection = this.window.getSelection();
-        if (selection && selection.getRangeAt && selection.rangeCount)
+        try
         {
-            this.selectionStack.push(selection.getRangeAt(0));
+            let data = await navigator.clipboard.readText();
+            data = Str.NonNull(data);
+
+            if (data !== this.CurrentData)
+            {
+                this.CurrentData = data;
+                return data;
+            }
+            else
+            {
+                return "";
+            }
+        }
+        catch
+        {
+            return "";
         }
     }
 
+    public async WriteLocalClipboardAsync(data: string): Promise<void>
+    {
+        data = Str.NonNull(data);
+
+        await navigator.clipboard.writeText(data);
+
+        this.CurrentData = data;
+    }
 }
