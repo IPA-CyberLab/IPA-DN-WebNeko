@@ -178,6 +178,7 @@ export const GuaKeyCodes =
     Zenkaku: 0xFF28,
     ZenkakuHankaku: 0xFF2A,
     Space: 0x20,
+    DN_JP_WO: 0xFC81, // 日本語キーボード時のかな入力の「を」
 }
 
 // 論理キーボード抽象クラス
@@ -372,6 +373,27 @@ export class GuaComfortableKeyboard extends GuaLogicalKeyboard
         if (code === GuaKeyCodes.Meta1 || code === GuaKeyCodes.Meta2)
         {
             code = GuaKeyCodes.Win;
+        }
+
+        if (!Str.IsSamei(this.Profile.Preference.KeyboardLayoutStr, "en-us-qwerty"))
+        {
+            // 日本語キーボードの場合で、「Shift + 0」キー、すなわち、「を」キーが押された場合は、キーコードとして特殊キー DN_JP_WO: 0xFC81 が押されたものと置換する
+            if (this.CurrentPhysicalKeyStates[GuaKeyCodes.Shift1] || this.CurrentPhysicalKeyStates[GuaKeyCodes.Shift2])
+            {
+                if (code === 0x30 && pressed)
+                {
+                    if (!this.CurrentVirtualKeyStates[code])
+                    {
+                        await this.PressVirtualKeyAsync(GuaKeyCodes.DN_JP_WO, true);
+
+                        await Task.Delay(100);
+
+                        await this.PressVirtualKeyAsync(GuaKeyCodes.DN_JP_WO, false);
+
+                        return true;
+                    }
+                }
+            }
         }
 
         // Windows キーに関する特殊な動作
